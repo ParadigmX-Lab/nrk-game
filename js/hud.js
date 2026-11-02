@@ -1,6 +1,7 @@
 import { CFG } from './config.js';
 import { bearingDeg, bearingName, fmtTime } from './util.js';
 import { drawMinimap } from './tacmap.js';
+import { view } from './orient.js';
 
 const C_BIG = 2 * Math.PI * 41;
 const C_SMALL = 2 * Math.PI * 30;
@@ -128,7 +129,7 @@ export class Hud {
       pct = 100;
     } else {
       // На вузькому екрані «ДО» не влазить поруч із метрами - назва ОП важливіша
-      lbl = ph === 'return' ? 'ДО БАЗИ' : window.innerWidth < 800 ? `«${op.name}»` : `ДО ОП «${op.name}»`;
+      lbl = ph === 'return' ? 'ДО БАЗИ' : view.w < 800 ? `«${op.name}»` : `ДО ОП «${op.name}»`;
       val = `${g.remainingM} м`;
       pct = g.progress * 100;
     }

@@ -7,10 +7,46 @@ import { hashString } from './rng.js';
 import { todayKey, fmtTime } from './util.js';
 import { drawTactical, tacticalInfo, tacticalTransform } from './tacmap.js';
 import { CFG, LEVELS, setDifficulty } from './config.js';
+import { applyLayout, toLocal } from './orient.js';
 
 const $ = (id) => document.getElementById(id);
 const params = new URLSearchParams(location.search);
 const DEBUG = params.get('debug') === '1';
+
+// ---------- Орієнтація ----------
+// Портрет на телефоні: де можна - просимо тапнути і блокуємо landscape (Android),
+// інакше повертаємо саму гру на 90° (iPhone, вбудоване вікно)
+const COARSE = !!(window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
+let embedded = false;
+try {
+  embedded = window.self !== window.top;
+} catch (e) {
+  embedded = true;
+}
+let lockFailed = false;
+let flipped = false;
+try {
+  flipped = localStorage.getItem('nrk.flip') === '1';
+} catch (e) {
+  /* приватний режим */
+}
+const canLock = () =>
+  COARSE && !embedded && document.fullscreenEnabled !== false && !!document.documentElement.requestFullscreen && !!(screen.orientation && screen.orientation.lock);
+
+function layout() {
+  const app = $('app');
+  const portrait = window.innerHeight > window.innerWidth;
+  let rot = 0;
+  let ask = false;
+  if (portrait && COARSE) {
+    if (canLock() && !lockFailed) ask = true;
+    else rot = flipped ? -90 : 90;
+  }
+  applyLayout(app, rot);
+  app.classList.toggle('ask-rotate', ask);
+  for (const id of ['btnFlip', 'btnFlip2']) $(id).hidden = rot === 0;
+}
+layout();
 
 const sfx = new Sfx();
 const hud = new Hud();
@@ -151,20 +187,24 @@ function setMode(mode) {
   if (playing) input.placeIdle();
 }
 
+// true - якщо екран вдалося заблокувати горизонтально
 async function goFullscreen() {
-  const coarse = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
-  if (!coarse || document.fullscreenEnabled === false) return;
+  if (!COARSE || embedded || document.fullscreenEnabled === false) return false;
   const el = document.documentElement;
   try {
     if (!document.fullscreenElement && el.requestFullscreen) await el.requestFullscreen({ navigationUI: 'hide' });
   } catch (e) {
-    /* iPhone не вміє - це нормально */
+    return false; // iPhone не вміє - це нормально
   }
   try {
-    if (screen.orientation && screen.orientation.lock) await screen.orientation.lock('landscape');
+    if (screen.orientation && screen.orientation.lock) {
+      await screen.orientation.lock('landscape');
+      return true;
+    }
   } catch (e) {
     /* не всі браузери дозволяють */
   }
+  return false;
 }
 
 function startRun() {
@@ -179,8 +219,7 @@ function startRun() {
 
 // У вбудованому вікні (iframe) повний екран зазвичай заборонений - кнопку не показуємо
 function canFullscreen() {
-  const coarse = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
-  return coarse && document.fullscreenEnabled !== false && !!document.documentElement.requestFullscreen;
+  return COARSE && !embedded && document.fullscreenEnabled !== false && !!document.documentElement.requestFullscreen;
 }
 
 function updateFsButton() {
@@ -398,7 +437,8 @@ $('btnMapView').addEventListener('click', () => {
   let drag = null;
   c.addEventListener('pointerdown', (e) => {
     if (tacView.full) return;
-    drag = { id: e.pointerId, x: e.clientX, y: e.clientY };
+    const p = toLocal(e.clientX, e.clientY);
+    drag = { id: e.pointerId, x: p.x, y: p.y };
     try {
       c.setPointerCapture(e.pointerId);
     } catch (err) {
@@ -408,10 +448,11 @@ $('btnMapView').addEventListener('click', () => {
   c.addEventListener('pointermove', (e) => {
     if (!drag || e.pointerId !== drag.id) return;
     const { s } = tacticalTransform(game, c.clientWidth, c.clientHeight, tacView);
-    tacView.cx -= (e.clientX - drag.x) / s;
-    tacView.cy -= (e.clientY - drag.y) / s;
-    drag.x = e.clientX;
-    drag.y = e.clientY;
+    const p = toLocal(e.clientX, e.clientY);
+    tacView.cx -= (p.x - drag.x) / s;
+    tacView.cy -= (p.y - drag.y) / s;
+    drag.x = p.x;
+    drag.y = p.y;
     drawMap();
   });
   const end = () => (drag = null);
@@ -451,10 +492,32 @@ window.addEventListener('keydown', (e) => {
 
 // ---------- Системне ----------
 const onResize = () => {
+  layout();
   renderer.resize();
   input.placeIdle();
   if (!screens.map.classList.contains('hidden')) drawMap();
+  // Вийшли з повного екрана й телефон став вертикально - гра чекає на паузі під підказкою
+  if ($('app').classList.contains('ask-rotate') && game.state === 'play') pause();
 };
+$('btnRotate').addEventListener('click', async () => {
+  sfx.init();
+  const ok = await goFullscreen();
+  // Деякі браузери «блокують», але екран так і не повертається - тоді теж повертаємо саму гру
+  if (ok) await new Promise((res) => setTimeout(res, 900));
+  if (!ok || window.innerHeight > window.innerWidth) {
+    lockFailed = true;
+    onResize();
+  }
+});
+function flip() {
+  sfx.init();
+  sfx.click();
+  flipped = !flipped;
+  store.set('nrk.flip', flipped ? '1' : '0');
+  onResize();
+}
+$('btnFlip').addEventListener('click', flip);
+$('btnFlip2').addEventListener('click', flip);
 window.addEventListener('resize', onResize);
 window.addEventListener('orientationchange', () => setTimeout(onResize, 250));
 document.addEventListener('visibilitychange', () => {
@@ -466,12 +529,6 @@ $('app').addEventListener('contextmenu', (e) => e.preventDefault());
 
 const isIOS = /iP(hone|od|ad)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 const standalone = window.navigator.standalone || (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
-let embedded = false;
-try {
-  embedded = window.self !== window.top;
-} catch (e) {
-  embedded = true;
-}
 if (isIOS && !standalone && !embedded) $('iosHint').hidden = false;
 
 if (DEBUG) {

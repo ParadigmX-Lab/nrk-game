@@ -111,6 +111,7 @@
   <div id="hitflash"></div>
 
   <section id="scrStart" class="screen">
+    <button id="btnFlip" class="flipbtn" hidden aria-label="Перевернути екран">↻</button>
     <div class="sheet start">
       <div class="col">
         <div class="kicker">ЗСУ · НАЗЕМНИЙ РОБОТИЗОВАНИЙ КОМПЛЕКС</div>
@@ -142,7 +143,7 @@
           <li><b>СКАН</b> шукає міни й <b>ждунів</b> - FPV, що чатують на узбіччі. Перекопана земля - ознака міни</li>
           <li>Довго стоїш на місці - засікають і пристрілюються</li>
         </ul>
-        <p class="ver">Тестова версія 0.4.1</p>
+        <p class="ver">Тестова версія 0.4.2</p>
       </div>
     </div>
   </section>
@@ -154,6 +155,7 @@
       <button id="btnFs" class="btn" hidden>ПОВНИЙ ЕКРАН</button>
       <button id="btnRestart" class="btn">ПОЧАТИ ЗАНОВО</button>
       <button id="btnSound" class="btn">ЗВУК: УВІМК</button>
+      <button id="btnFlip2" class="btn" hidden>↻ ПЕРЕВЕРНУТИ ЕКРАН</button>
       <button id="btnMenu" class="btn ghost">ГОЛОВНЕ МЕНЮ</button>
     </div>
   </section>
@@ -217,7 +219,9 @@
         <path d="M50 30 A20 20 0 0 1 34 56"></path>
         <path d="M34 50 L34 56 L40 56"></path>
       </svg>
-      <p>Поверни телефон горизонтально</p>
+      <p>Гра горизонтальна</p>
+      <button id="btnRotate" class="btn primary">ГРАТИ НА ВЕСЬ ЕКРАН</button>
+      <p class="sub">Екран сам повернеться, навіть якщо автоповорот вимкнено</p>
     </div>
   </div>
 </div>

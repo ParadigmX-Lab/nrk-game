@@ -510,44 +510,60 @@ html, body {
   font-weight: 500;
 }
 
-@media (orientation: portrait) and (max-width: 900px) {
-  #rotate { display: flex; }
+#app.ask-rotate #rotate { display: flex; }
+.flipbtn {
+  position: absolute;
+  top: calc(8px + var(--sat));
+  right: calc(8px + var(--sar));
+  z-index: 2;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255, 255, 255, 0.3);
+  background: rgba(14, 20, 15, 0.9);
+  color: var(--ink);
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  touch-action: manipulation;
 }
+#rotate > div { display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 0 24px; }
+#rotate p { margin: 0; line-height: 1.45; }
+#rotate .sub { font-size: 13px; color: var(--muted); }
 
-@media (max-width: 720px) {
-  .topbar { left: calc(22px + var(--sal)); right: calc(22px + var(--sar)); gap: 6px; }
-  .status { gap: 7px; padding: 0 9px; font-size: 11px; }
-  .progress { flex-basis: 150px; min-width: 120px; padding: 6px 9px 7px; }
-  .pips i { width: 6px; }
-  .detector { padding: 0 9px; gap: 7px; }
-  .detector .dtext { min-width: 78px; }
-  .detector .val { font-size: 12px; }
-  .sheet.start { grid-template-columns: 1fr; gap: 14px; }
-  .toast { font-size: 12px; padding: 5px 9px; }
-  .tlegend { flex-basis: 238px; padding: 9px; }
-  .tlegend table { font-size: 9.5px; }
-  .tlegend td, .tlegend th { padding: 2px 2px; }
-  #minimap { width: 168px; height: 80px; }
-}
+/* Гра повернута CSS-трансформом (iPhone, або телефон без блокування орієнтації) */
+#app.rot { right: auto; bottom: auto; transform-origin: 0 0; }
+#app.rot90 { --sat: env(safe-area-inset-right, 0px); --sal: env(safe-area-inset-top, 0px); --sar: env(safe-area-inset-bottom, 0px); --sab: env(safe-area-inset-left, 0px); }
+#app.rotm90 { --sat: env(safe-area-inset-left, 0px); --sal: env(safe-area-inset-bottom, 0px); --sar: env(safe-area-inset-top, 0px); --sab: env(safe-area-inset-right, 0px); }
 
-@media (max-height: 400px) {
-  .sheet { padding: 14px 18px; }
-  .sheet h1 { font-size: 24px; }
-  .lead { font-size: 12px; margin-bottom: 8px; }
-  .help li { font-size: 11.5px; }
-  .mission { margin-bottom: 10px; }
-  .diff { margin-bottom: 10px; }
-  .seg button { min-height: 34px; font-size: 11.5px; }
-  .ddesc { font-size: 11.5px; margin-top: 5px; }
-}
+#app.narrow .topbar { left: calc(22px + var(--sal)); right: calc(22px + var(--sar)); gap: 6px; }
+#app.narrow .status { gap: 7px; padding: 0 9px; font-size: 11px; }
+#app.narrow .progress { flex-basis: 150px; min-width: 120px; padding: 6px 9px 7px; }
+#app.narrow .pips i { width: 6px; }
+#app.narrow .detector { padding: 0 9px; gap: 7px; }
+#app.narrow .detector .dtext { min-width: 78px; }
+#app.narrow .detector .val { font-size: 12px; }
+#app.narrow .sheet.start { grid-template-columns: 1fr; gap: 14px; }
+#app.narrow .toast { font-size: 12px; padding: 5px 9px; }
+#app.narrow .tlegend { flex-basis: 238px; padding: 9px; }
+#app.narrow .tlegend table { font-size: 9.5px; }
+#app.narrow .tlegend td, #app.narrow .tlegend th { padding: 2px 2px; }
+#app.narrow #minimap { width: 168px; height: 80px; }
 
-@media (max-height: 370px) {
-  .sheet { padding: 12px 16px; }
-  .sheet.start { gap: 16px; }
-  .sheet h1 { font-size: 22px; margin: 4px 0; }
-  .help ul { gap: 5px; }
-  .help li { font-size: 11px; line-height: 1.35; }
-  .mission div { padding: 6px 9px; }
-  .ddesc { min-height: 0; }
-  .btn { min-height: 40px; }
-}
+#app.short .sheet { padding: 14px 18px; }
+#app.short .sheet h1 { font-size: 24px; }
+#app.short .lead { font-size: 12px; margin-bottom: 8px; }
+#app.short .help li { font-size: 11.5px; }
+#app.short .mission { margin-bottom: 10px; }
+#app.short .diff { margin-bottom: 10px; }
+#app.short .seg button { min-height: 34px; font-size: 11.5px; }
+#app.short .ddesc { font-size: 11.5px; margin-top: 5px; }
+
+#app.tiny .sheet { padding: 12px 16px; }
+#app.tiny .sheet.start { gap: 16px; }
+#app.tiny .sheet h1 { font-size: 22px; margin: 4px 0; }
+#app.tiny .help ul { gap: 5px; }
+#app.tiny .help li { font-size: 11px; line-height: 1.35; }
+#app.tiny .mission div { padding: 6px 9px; }
+#app.tiny .ddesc { min-height: 0; }
+#app.tiny .btn { min-height: 40px; }

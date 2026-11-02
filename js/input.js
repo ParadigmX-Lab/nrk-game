@@ -1,4 +1,7 @@
 // Плаваючий джойстик (ліва частина екрана), кнопки дій і клавіатура для ПК.
+// Усі координати - всередині гри: якщо гру повернуто CSS-трансформом, toLocal їх перераховує.
+import { toLocal } from './orient.js';
+
 const R = 52; // радіус ходу джойстика, css px
 
 export class Input {
@@ -58,13 +61,12 @@ export class Input {
   onDown(e) {
     if (this.enabled) this.actions.push('tap');
     if (!this.enabled || this.joy.id !== null) return;
-    const rect = this.els.touch.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    if (x > rect.width * 0.6) return;
+    const p = toLocal(e.clientX, e.clientY);
+    if (p.x > this.els.touch.clientWidth * 0.6) return;
     e.preventDefault();
     this.joy.id = e.pointerId;
-    this.joy.ox = e.clientX;
-    this.joy.oy = e.clientY;
+    this.joy.ox = p.x;
+    this.joy.oy = p.y;
     this.joy.x = 0;
     this.joy.y = 0;
     this.joy.mag = 0;
@@ -80,16 +82,17 @@ export class Input {
   onMove(e) {
     if (e.pointerId !== this.joy.id) return;
     e.preventDefault();
-    let dx = e.clientX - this.joy.ox;
-    let dy = e.clientY - this.joy.oy;
+    const p = toLocal(e.clientX, e.clientY);
+    let dx = p.x - this.joy.ox;
+    let dy = p.y - this.joy.oy;
     const d = Math.hypot(dx, dy);
     // Якщо палець пішов далеко - джойстик «їде» за пальцем
     if (d > R * 1.6) {
       const k = (d - R * 1.6) / d;
       this.joy.ox += dx * k;
       this.joy.oy += dy * k;
-      dx = e.clientX - this.joy.ox;
-      dy = e.clientY - this.joy.oy;
+      dx = p.x - this.joy.ox;
+      dy = p.y - this.joy.oy;
     }
     const dd = Math.hypot(dx, dy);
     const m = Math.min(1, dd / R);
@@ -115,16 +118,16 @@ export class Input {
 
   placeIdle() {
     if (this.joy.id !== null) return;
-    const rect = this.els.touch.getBoundingClientRect();
-    this.joy.ox = rect.left + Math.max(96, rect.width * 0.11);
-    this.joy.oy = rect.top + rect.height - 92;
+    const w = this.els.touch.clientWidth;
+    const h = this.els.touch.clientHeight;
+    this.joy.ox = Math.max(96, w * 0.11);
+    this.joy.oy = h - 92;
     this.drawJoy();
   }
 
   drawJoy() {
-    const rect = this.els.touch.getBoundingClientRect();
-    const bx = this.joy.ox - rect.left;
-    const by = this.joy.oy - rect.top;
+    const bx = this.joy.ox;
+    const by = this.joy.oy;
     this.els.joy.style.transform = `translate(${bx - R}px, ${by - R}px)`;
     const kx = this.joy.x * this.joy.mag * R;
     const ky = this.joy.y * this.joy.mag * R;
