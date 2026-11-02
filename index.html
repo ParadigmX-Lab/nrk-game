@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#121812">
+<meta name="color-scheme" content="dark">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="НРК">
+<title>НРК: Остання миля</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23121812'/%3E%3Crect x='12' y='18' width='40' height='8' rx='3' fill='%238BF28A'/%3E%3Crect x='12' y='38' width='40' height='8' rx='3' fill='%238BF28A'/%3E%3Crect x='18' y='24' width='28' height='16' rx='3' fill='%23FFC845'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Rubik:wght@500;700&display=swap">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="app">
+  <canvas id="view"></canvas>
+  <div id="touch"></div>
+
+  <div id="hud" class="hidden">
+    <div class="frame tl"></div>
+    <div class="frame tr"></div>
+    <div class="frame bl"></div>
+    <div class="frame br"></div>
+
+    <div class="topbar">
+      <div class="panel status">
+        <div class="item">
+          <svg width="24" height="14" viewBox="0 0 24 14" aria-hidden="true">
+            <rect x="1" y="1" width="19" height="12" rx="2.5" fill="none" stroke="#EEF6E8" stroke-width="1.5"></rect>
+            <rect x="21" y="4.5" width="2" height="5" rx="1" fill="#EEF6E8"></rect>
+            <rect id="battFill" x="3" y="3" width="15" height="8" rx="1" fill="#8BF28A"></rect>
+          </svg>
+          <span id="battTxt">100%</span>
+        </div>
+        <i class="sep"></i>
+        <div class="item">
+          <div class="bars" id="bars"><i style="height:5px"></i><i style="height:7px"></i><i style="height:9px"></i><i style="height:11px"></i><i style="height:13px"></i></div>
+          <span id="sigTxt">5/5</span>
+        </div>
+        <i class="sep"></i>
+        <div class="item">
+          <svg width="16" height="14" viewBox="0 0 16 14" aria-hidden="true">
+            <rect x="1" y="1" width="14" height="12" rx="1.5" fill="none" stroke="#D6AB5E" stroke-width="1.5"></rect>
+            <path d="M8 1 L8 13 M1 7 L15 7" stroke="#D6AB5E" stroke-width="1.5"></path>
+          </svg>
+          <span id="cargoTxt">40 кг</span>
+        </div>
+        <i class="sep"></i>
+        <div class="item pips" id="pips" title="Стан НРК"><i></i><i></i><i></i><i></i><i></i></div>
+      </div>
+
+      <div class="panel progress">
+        <div class="prow"><span class="lbl" id="progLbl">ДО «НУЛЯ»</span><span class="val" id="progVal">0 м</span></div>
+        <div class="track"><div class="fill" id="progFill"></div></div>
+        <div class="prow exprow"><span class="lbl">ЗАСВІТКА</span><div class="exp"><div id="expFill"></div></div></div>
+      </div>
+
+      <div class="panel detector idle" id="det">
+        <svg width="30" height="30" viewBox="0 0 32 32" aria-hidden="true">
+          <circle cx="16" cy="16" r="14" fill="none" stroke="rgba(238,246,232,0.45)" stroke-width="1.5"></circle>
+          <g id="wedge"><path class="wedge" d="M16 16 L11.21 2.84 A14 14 0 0 1 20.79 2.84 Z"></path></g>
+          <circle cx="16" cy="16" r="2.5" fill="#EEF6E8"></circle>
+        </svg>
+        <div class="dtext"><span class="lbl" id="detLbl">ДЕТЕКТОР</span><span class="val" id="detVal">ЧИСТО</span></div>
+        <i class="dot"></i>
+      </div>
+
+      <button id="btnPause" class="iconbtn" aria-label="Пауза">
+        <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="2" width="3.5" height="12" rx="1" fill="#EEF6E8"></rect><rect x="9.5" y="2" width="3.5" height="12" rx="1" fill="#EEF6E8"></rect></svg>
+      </button>
+    </div>
+
+    <button id="minimap" aria-label="Відкрити тактичну карту">
+      <canvas id="miniCanvas"></canvas>
+      <span class="mtag" id="mtag">КАРТА</span>
+    </button>
+
+    <div id="banner"></div>
+    <div id="toasts"></div>
+    <div id="caption"><span id="capLvl">АКТИВНО</span> · РЕТР-1 · ВИС 120 м · <span id="clock">0:00</span></div>
+    <div id="fps" hidden></div>
+  </div>
+
+  <div id="joy" class="hidden"><div id="knob"></div></div>
+
+  <div id="controls" class="hidden">
+    <button id="btnScan" class="cbtn small" aria-label="Скан">
+      <svg class="ring" viewBox="0 0 64 64" aria-hidden="true"><circle id="ringScan" cx="32" cy="32" r="30" transform="rotate(-90 32 32)"></circle></svg>
+      <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true" fill="none" stroke="#EEF6E8" stroke-width="2" stroke-linecap="round"><circle cx="10" cy="10" r="8"></circle><circle cx="10" cy="10" r="3.5"></circle><path d="M10 10 L16 4"></path></svg>
+      <span id="lblScan">СКАН</span>
+    </button>
+    <button id="btnReb" class="cbtn small" aria-label="РЕБ">
+      <svg class="ring" viewBox="0 0 64 64" aria-hidden="true"><circle id="ringReb" cx="32" cy="32" r="30" transform="rotate(-90 32 32)"></circle></svg>
+      <svg width="22" height="20" viewBox="0 0 22 20" aria-hidden="true" fill="none" stroke="#EEF6E8" stroke-width="2" stroke-linecap="round"><path d="M11 9 L11 19"></path><circle cx="11" cy="7" r="1.6" fill="#EEF6E8"></circle><path d="M7 3.5 A5 5 0 0 0 7 10.5"></path><path d="M15 3.5 A5 5 0 0 1 15 10.5"></path><path d="M4 1 A9 9 0 0 0 4 13"></path><path d="M18 1 A9 9 0 0 1 18 13"></path></svg>
+      <span id="lblReb">РЕБ</span>
+    </button>
+    <button id="btnDash" class="cbtn big" aria-label="Ривок">
+      <svg class="ring" viewBox="0 0 86 86" aria-hidden="true"><circle id="ringDash" cx="43" cy="43" r="41" transform="rotate(-90 43 43)"></circle></svg>
+      <svg width="26" height="20" viewBox="0 0 26 20" aria-hidden="true" fill="none" stroke="#2B2100" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M4 3 L11 10 L4 17"></path><path d="M13 3 L20 10 L13 17"></path></svg>
+      <span id="lblDash">РИВОК</span>
+    </button>
+  </div>
+
+  <div id="hitflash"></div>
+
+  <section id="scrStart" class="screen">
+    <div class="sheet start">
+      <div class="col">
+        <div class="kicker">ЗСУ · НАЗЕМНИЙ РОБОТИЗОВАНИЙ КОМПЛЕКС</div>
+        <h1>ОСТАННЯ МИЛЯ</h1>
+        <p class="lead">Ти - оператор НРК. Доправ БК на опорний пункт піхоти й поверни комплекс на базу.</p>
+        <div class="mission">
+          <div><span>Маршрут</span><b id="mRoute">Маршрут дня</b></div>
+          <div><span>Вантаж</span><b>БК · 40 кг</b></div>
+        </div>
+        <div class="diff">
+          <div class="dlabel">СКЛАДНІСТЬ</div>
+          <div class="seg" id="diffSeg" role="radiogroup" aria-label="Складність"></div>
+          <p class="ddesc" id="diffDesc"></p>
+        </div>
+        <div class="row">
+          <button id="btnStart" class="btn primary">ПОЧАТИ РЕЙС</button>
+          <button id="btnNewMap" class="btn">НОВА КАРТА</button>
+        </div>
+        <p class="hint" id="iosHint" hidden>iPhone: «Поділитися» → «На екран Додому», щоб грати на весь екран.</p>
+      </div>
+      <div class="col help">
+        <h2>Як керувати</h2>
+        <ul>
+          <li><b>Ліва частина екрана</b> - джойстик. Маршрут - на <b>мінікарті</b>; блимає - нове завдання, відкрий карту</li>
+          <li><b>Тримайся доріг</b>: поля заміновані, крізь посадки не проїхати, річку - лише мостом</li>
+          <li><b>Укриття</b> - крони, руїни. <b>Сітки</b> ловлять FPV і скиди, але в провисі можна заплутатися</li>
+          <li><b>РИВОК</b> - ухилитися від FPV, скиду, прильоту, вирватися з сітки</li>
+          <li><b>РЕБ</b> глушить радіо-FPV і скиди, але гріється і їсть заряд. Оптоволокно не бере</li>
+          <li><b>СКАН</b> шукає міни й <b>ждунів</b> - FPV, що чатують на узбіччі. Перекопана земля - ознака міни</li>
+          <li>Довго стоїш на місці - засікають і пристрілюються</li>
+        </ul>
+        <p class="ver">Тестова версія 0.4.1</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="scrPause" class="screen hidden">
+    <div class="sheet small">
+      <h1>ПАУЗА</h1>
+      <button id="btnResume" class="btn primary">ПРОДОВЖИТИ</button>
+      <button id="btnFs" class="btn" hidden>ПОВНИЙ ЕКРАН</button>
+      <button id="btnRestart" class="btn">ПОЧАТИ ЗАНОВО</button>
+      <button id="btnSound" class="btn">ЗВУК: УВІМК</button>
+      <button id="btnMenu" class="btn ghost">ГОЛОВНЕ МЕНЮ</button>
+    </div>
+  </section>
+
+  <section id="scrMap" class="screen hidden">
+    <div class="tmap">
+      <canvas id="tacCanvas" aria-label="Тактична карта маршруту"></canvas>
+      <div class="tlegend">
+        <div class="kicker">ТАКТИЧНА КАРТА · ГРА НА ПАУЗІ</div>
+        <div class="ttask" id="tTask" hidden></div>
+        <div class="row">
+          <button id="btnMapClose" class="btn primary">ЗАКРИТИ</button>
+          <button id="btnMapView" class="btn">ВЕСЬ РАЙОН</button>
+        </div>
+        <div class="tsq">Квадрат НРК: <b id="tSq">01-01</b></div>
+        <table>
+          <thead><tr><th>Точка</th><th>X</th><th>Y</th><th>Від НРК</th></tr></thead>
+          <tbody id="tPts"></tbody>
+        </table>
+        <ul class="tkey">
+          <li><i class="k-route"></i>Маршрут</li>
+          <li><i class="k-road"></i>Дорога</li>
+          <li><i class="k-river"></i>Річка</li>
+          <li><i class="k-net"></i>Сітка над дорогою</li>
+          <li><i class="k-mine"></i>Мінне поле / міна</li>
+          <li><i class="k-reb"></i>Ворожий РЕБ</li>
+          <li><i class="k-amb"></i>Ждун (виявлений)</li>
+          <li><i class="k-tree"></i>Укриття (дерева)</li>
+        </ul>
+        <p class="tnote">Координати умовні, крок сітки 125 м. Тягни карту пальцем.</p>
+
+      </div>
+    </div>
+  </section>
+
+  <section id="scrResult" class="screen hidden">
+    <div class="sheet result">
+      <div class="kicker" id="rKicker">Маршрут дня</div>
+      <h1 id="rTitle">РЕЙС ВИКОНАНО</h1>
+      <p class="lead" id="rText"></p>
+      <p class="rnext" id="rNext" hidden></p>
+      <div class="stats">
+        <div><span>Час</span><b id="rTime">0:00</b></div>
+        <div><span>Доставлено</span><b id="rCargo">0/40 кг</b></div>
+        <div><span>Влучань</span><b id="rHits">0</b></div>
+        <div><span>Заряд</span><b id="rBatt">0%</b></div>
+      </div>
+      <div class="row">
+        <button id="btnAgain" class="btn primary">ЩЕ РАЗ</button>
+        <button id="btnShare" class="btn">ПОДІЛИТИСЯ</button>
+        <button id="btnResNew" class="btn">НОВА КАРТА</button>
+        <button id="btnResMenu" class="btn ghost">МЕНЮ</button>
+      </div>
+    </div>
+  </section>
+
+  <div id="rotate">
+    <div>
+      <svg width="64" height="64" viewBox="0 0 64 64" aria-hidden="true" fill="none" stroke="#EEF6E8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="20" y="8" width="24" height="42" rx="4"></rect>
+        <path d="M50 30 A20 20 0 0 1 34 56"></path>
+        <path d="M34 50 L34 56 L40 56"></path>
+      </svg>
+      <p>Поверни телефон горизонтально</p>
+    </div>
+  </div>
+</div>
+<script type="module" src="js/main.js"></script>
+</body>
+</html>
